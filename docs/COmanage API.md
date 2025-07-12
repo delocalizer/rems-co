@@ -31,14 +31,21 @@ curl -u "${my_user}:${my_key}" \
     | jq .
 ```
 
-## CORE API
-
 Example [view one Group (in my CO) in JSON format](https://spaces.at.internet2.edu/display/COmanage/CoGroup+API#CoGroupAPI-View%28one%29)
 ```bash
 curl -u "${my_user}:${my_key}" \
     -H "Content-Type: application/json"\
     -H "Accept: application/json"\
     --location "https://${my_domain}/registry/co_groups/${groupid}.json" \
+    | jq .
+```
+
+Example [list the Members in a Group (in my CO) in JSON format](https://spaces.at.internet2.edu/display/COmanage/CoGroupMember+API#CoGroupMemberAPI-View%28perCoGroup%29)
+```bash
+curl -u "${my_user}:${my_key}" \
+    -H "Content-Type: application/json"\
+    -H "Accept: application/json"\
+    --location "https://${my_domain}/registry/co_group_members.json?cogroupid=${groupid}" \
     | jq .
 ```
 
