@@ -1,0 +1,45 @@
+This was what gets posted when an application with two members, two resources,
+and an entitlement end date of 2025-07-20 is revoked on 2025-07-13T03:52:27.075Z
+(this is posted to a different endpoint) 
+
+==== New Request ====
+POST / HTTP/1.1
+Connection: close
+content-type: application/json
+accept-encoding: gzip, deflate
+Content-Length: 134
+Host: host.docker.internal:8080
+User-Agent: Apache-HttpClient/4.5.13 (Java/17.0.13)
+
+[{"application":24,"resource":"urn:nbn:fi:lb-201403262","user":"malice","mail":"malice@example.com","end":"2025-07-13T03:52:27.075Z"}]
+==== New Request ====
+POST / HTTP/1.1
+Connection: close
+content-type: application/json
+accept-encoding: gzip, deflate
+Content-Length: 121
+Host: host.docker.internal:8080
+User-Agent: Apache-HttpClient/4.5.13 (Java/17.0.13)
+
+[{"application":24,"resource":"Extra Data","user":"malice","mail":"malice@example.com","end":"2025-07-13T03:52:27.075Z"}]
+==== New Request ====
+POST / HTTP/1.1
+Connection: close
+content-type: application/json
+accept-encoding: gzip, deflate
+Content-Length: 132
+Host: host.docker.internal:8080
+User-Agent: Apache-HttpClient/4.5.13 (Java/17.0.13)
+
+[{"application":24,"resource":"urn:nbn:fi:lb-201403262","user":"alice","mail":"alice@example.com","end":"2025-07-13T03:52:27.087Z"}]
+==== New Request ====
+POST / HTTP/1.1
+Connection: close
+content-type: application/json
+accept-encoding: gzip, deflate
+Content-Length: 119
+Host: host.docker.internal:8080
+User-Agent: Apache-HttpClient/4.5.13 (Java/17.0.13)
+
+[{"application":24,"resource":"Extra Data","user":"alice","mail":"alice@example.com","end":"2025-07-13T03:52:27.087Z"}]
+

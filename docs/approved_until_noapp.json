@@ -1,0 +1,10 @@
+{
+  "application/id": 24,
+  "event/time": "2025-07-13T02:43:11.903Z",
+  "application/comment": "",
+  "entitlement/end": "2025-07-15T23:59:59.000Z",
+  "event/actor": "handler",
+  "event/type": "application.event/approved",
+  "event/attachments": [],
+  "event/id": 106
+}
