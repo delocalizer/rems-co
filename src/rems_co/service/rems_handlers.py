@@ -17,7 +17,7 @@ def should_create_group(resource: str) -> bool:
 
 def handle_approve(event: ApproveEvent) -> None:
     api = CoManageClient()
-    user = api.resolve_user_by_email_and_uid(email=event.mail, uid=event.user)
+    person = api.resolve_person_by_email_and_uid(email=event.mail, uid=event.user)
     group = api.get_group_by_name(event.resource)
 
     if not group:
@@ -29,16 +29,18 @@ def handle_approve(event: ApproveEvent) -> None:
             )
             return
 
-    api.add_user_to_group(user_id=user.id, group_id=group.id, valid_through=event.end)
+    api.add_person_to_group(
+        person_id=person.id, group_id=group.id, valid_through=event.end
+    )
 
 
 def handle_revoke(event: ApproveEvent) -> None:
     api = CoManageClient()
-    user = api.resolve_user_by_email_and_uid(email=event.mail, uid=event.user)
+    person = api.resolve_person_by_email_and_uid(email=event.mail, uid=event.user)
     group = api.get_group_by_name(event.resource)
 
     if group:
-        api.remove_user_from_group(user_id=user.id, group_id=group.id)
+        api.remove_person_from_group(person_id=person.id, group_id=group.id)
     else:
         print(
             f"[INFO] Group '{event.resource}' not found during revoke. No action taken."

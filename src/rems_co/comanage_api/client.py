@@ -10,7 +10,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from rems_co.models import Group, User
+from rems_co.models import CoGroup, CoPerson
 from rems_co.settings import settings
 
 
@@ -79,23 +79,26 @@ class CoManageClient:
         except httpx.RequestError as e:
             raise APIError(f"DELETE {path} failed: {e}") from e
 
-    def resolve_user_by_email_and_uid(self, email: str, uid: str) -> User:
-        resp = self._get("/users.json", params={"email": email})
-        users = resp.json().get("users", [])
-        for u in users:
-            if u.get("identifier") == uid:
-                return User(id=u["id"], email=u["email"])
-        raise APIError(f"No user matched email={email} and uid={uid}")
+    def resolve_person_by_email_and_uid(self, email: str, uid: str) -> CoPerson:
+        resp = self._get(
+            "/co_people.json",
+            params={"coid": settings.comanage_coid, "search.mail": email},
+        )
+        people = resp.json().get("CoPeople", [])
+        for p in people:
+            if p.get("Id") == uid:
+                return CoPerson(id=p["Id"])
+        raise APIError(f"No person matched email={email} and uid={uid}")
 
-    def get_group_by_name(self, name: str) -> Group | None:
+    def get_group_by_name(self, name: str) -> CoGroup | None:
         resp = self._get("/groups.json")
         groups = resp.json().get("groups", [])
         for g in groups:
             if g.get("name") == name:
-                return Group(id=g["id"], name=g["name"])
+                return CoGroup(id=g["id"], name=g["name"])
         return None
 
-    def create_group(self, name: str) -> Group:
+    def create_group(self, name: str) -> CoGroup:
         payload = {
             "RequestType": "CoGroups",
             "Version": "1.0",
@@ -112,10 +115,10 @@ class CoManageClient:
         }
         resp = self._post("/co_groups.json", json=payload)
         g = resp.json()["CoGroups"][0]
-        return Group(id=g["Id"], name=g["Name"])
+        return CoGroup(id=g["Id"], name=g["Name"])
 
-    def add_user_to_group(
-        self, user_id: int, group_id: int, valid_through: datetime
+    def add_person_to_group(
+        self, person_id: int, group_id: int, valid_through: datetime
     ) -> None:
         valid_through_str = valid_through.strftime("%Y-%m-%dT%H:%M:%SZ")
         payload = {
@@ -125,7 +128,7 @@ class CoManageClient:
                 {
                     "Version": "1.0",
                     "CoGroupId": str(group_id),
-                    "Person": {"Type": "CO", "Id": str(user_id)},
+                    "Person": {"Type": "CO", "Id": str(person_id)},
                     "Member": True,
                     "ValidThrough": valid_through_str,
                 }
@@ -133,16 +136,16 @@ class CoManageClient:
         }
         self._post("/co_group_members.json", json=payload)
 
-    def remove_user_from_group(self, user_id: int, group_id: int) -> None:
+    def remove_person_from_group(self, person_id: int, group_id: int) -> None:
         resp = self._get(
             "/co_group_members.json",
-            params={"co_group_id": group_id, "co_person_id": user_id},
+            params={"co_group_id": group_id, "co_person_id": person_id},
         )
         members = resp.json().get("CoGroupMembers", [])
 
         if not members:
             raise APIError(
-                f"No group membership found for user={user_id} and group={group_id}"
+                f"No group membership found for person={person_id} and group={group_id}"
             )
 
         member_id = members[0]["Id"]

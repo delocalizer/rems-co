@@ -49,6 +49,34 @@ curl -u "${my_user}:${my_key}" \
     | jq .
 ```
 
+Example [search for Person by email](https://spaces.at.internet2.edu/display/COmanage/CoPerson+API#CoPersonAPI-View%28perEmailAddress%29)
+```bash
+curl -u "${my_user}:${my_key}" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    --location "https://${my_domain}/registry/co_people.json?coid=${coid}&search.mail=conrad.leonard.1@gmail.com"
+```
+response:
+```json
+{
+  "ResponseType":"CoPeople",
+  "Version":"1.0",
+  "CoPeople":[
+    {
+      "Version":"1.0",
+      "Id":2978,
+      "CoId":42,
+      "Status":"Active",
+      "Created":"2025-06-24 04:06:45",
+      "Modified":"2025-06-24 04:06:45",
+      "Revision":0,
+      "Deleted":false,
+      "ActorIdentifier":"co_42.transparent_enroller"
+    }
+  ]
+}
+```
+
 ## Core API
 This is
 > a collection of higher level APIs that provide transaction-oriented operations,

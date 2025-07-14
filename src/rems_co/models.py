@@ -21,12 +21,11 @@ class RevokeEvent:
 
 
 @dataclass
-class User:
+class CoPerson:
     id: int
-    email: str
 
 
 @dataclass
-class Group:
+class CoGroup:
     id: int
     name: str
