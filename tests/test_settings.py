@@ -1,7 +1,7 @@
 import os
 from unittest import mock
 
-from rems_comanage.settings import Settings
+from rems_co.settings import Settings
 
 
 class TestSettings:
