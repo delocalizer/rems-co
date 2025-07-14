@@ -105,11 +105,11 @@ class CoManageClient:
         raise APIError(f"No matching CoPerson found with email={email} and uid={uid}")
 
     def get_group_by_name(self, name: str) -> CoGroup | None:
-        resp = self._get("/groups.json")
-        groups = resp.json().get("groups", [])
+        resp = self._get("/co_groups.json", params={"coid": self.co_id})
+        groups = resp.json().get("CoGroups", [])
         for g in groups:
-            if g.get("name") == name:
-                return CoGroup(id=g["id"], name=g["name"])
+            if g.get("Name") == name:
+                return CoGroup(id=g["Id"], name=g["Name"])
         return None
 
     def create_group(self, name: str) -> CoGroup:
@@ -128,8 +128,8 @@ class CoManageClient:
             ],
         }
         resp = self._post("/co_groups.json", json=payload)
-        g = resp.json()["CoGroups"][0]
-        return CoGroup(id=g["Id"], name=g["Name"])
+        newg = resp.json()
+        return CoGroup(id=newg["Id"], name=name)
 
     def add_person_to_group(
         self, person_id: int, group_id: int, valid_through: datetime
@@ -153,7 +153,7 @@ class CoManageClient:
     def remove_person_from_group(self, person_id: int, group_id: int) -> None:
         resp = self._get(
             "/co_group_members.json",
-            params={"co_group_id": group_id, "co_person_id": person_id},
+            params={"cogroupid": group_id, "copersonid": person_id},
         )
         members = resp.json().get("CoGroupMembers", [])
 

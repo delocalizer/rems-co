@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 
+from pydantic import BaseModel
 
-@dataclass
-class ApproveEvent:
+
+class ApproveEvent(BaseModel):
     application: int
     resource: str
     user: str
@@ -11,8 +11,7 @@ class ApproveEvent:
     end: datetime
 
 
-@dataclass
-class RevokeEvent:
+class RevokeEvent(BaseModel):
     application: int
     resource: str
     user: str
@@ -20,14 +19,12 @@ class RevokeEvent:
     end: datetime
 
 
-@dataclass
-class CoPerson:
+class CoPerson(BaseModel):
     id: int
     email: str
     identifier: str
 
 
-@dataclass
-class CoGroup:
+class CoGroup(BaseModel):
     id: int
     name: str
