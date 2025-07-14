@@ -82,13 +82,27 @@ class CoManageClient:
     def resolve_person_by_email_and_uid(self, email: str, uid: str) -> CoPerson:
         resp = self._get(
             "/co_people.json",
-            params={"coid": settings.comanage_coid, "search.mail": email},
+            params={"coid": self.co_id, "search.mail": email},
         )
         people = resp.json().get("CoPeople", [])
-        for p in people:
-            if p.get("Id") == uid:
-                return CoPerson(id=p["Id"])
-        raise APIError(f"No person matched email={email} and uid={uid}")
+
+        for person in people:
+            person_id = person.get("Id")
+            if not person_id:
+                continue
+
+            try:
+                identifiers_resp = self._get(
+                    "/identifiers.json", params={"copersonid": person_id}
+                ).json()
+            except Exception:
+                continue  # skip if this person's identifiers can't be loaded
+
+            for ident in identifiers_resp.get("Identifiers", []):
+                if ident.get("Identifier") == uid:
+                    return CoPerson(id=person_id, email=email, identifier=uid)
+
+        raise APIError(f"No matching CoPerson found with email={email} and uid={uid}")
 
     def get_group_by_name(self, name: str) -> CoGroup | None:
         resp = self._get("/groups.json")
@@ -149,6 +163,5 @@ class CoManageClient:
             )
 
         member_id = members[0]["Id"]
-
         delete_path = f"/co_group_members/{member_id}.json"
         self._delete(delete_path)

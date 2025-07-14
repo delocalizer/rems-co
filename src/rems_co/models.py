@@ -23,6 +23,8 @@ class RevokeEvent:
 @dataclass
 class CoPerson:
     id: int
+    email: str
+    identifier: str
 
 
 @dataclass

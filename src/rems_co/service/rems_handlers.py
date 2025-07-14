@@ -1,7 +1,7 @@
 import fnmatch
 
 from rems_co.comanage_api.client import CoManageClient
-from rems_co.models import ApproveEvent
+from rems_co.models import ApproveEvent, RevokeEvent
 from rems_co.settings import settings
 
 
@@ -34,7 +34,7 @@ def handle_approve(event: ApproveEvent) -> None:
     )
 
 
-def handle_revoke(event: ApproveEvent) -> None:
+def handle_revoke(event: RevokeEvent) -> None:
     api = CoManageClient()
     person = api.resolve_person_by_email_and_uid(email=event.mail, uid=event.user)
     group = api.get_group_by_name(event.resource)

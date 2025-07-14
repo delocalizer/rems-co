@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 
-from rems_co.models import ApproveEvent
+from rems_co.models import ApproveEvent, RevokeEvent
 from rems_co.service.rems_handlers import handle_approve, handle_revoke
 
 router = APIRouter()
@@ -23,7 +23,7 @@ async def revoke(request: Request) -> dict:
     data = await request.json()
     for item in data:
         try:
-            event = ApproveEvent(**item)  # reuse same structure for now
+            event = RevokeEvent(**item)
             handle_revoke(event)
         except Exception as e:
             print(f"[ERROR] Failed to process revoke event {item}: {e}")
