@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from rems_co.comanage_api.client import APIError, CoManageClient
+from rems_co.comanage_api.client import CoManageClient
 from rems_co.comanage_api.models import (
     AddGroupMemberRequest,
     AddGroupRequest,
@@ -18,6 +18,7 @@ from rems_co.comanage_api.models import (
     NewObjectResponse,
     PersonRef,
 )
+from rems_co.exceptions import MembershipNotFound, PersonNotFound
 from rems_co.models import Group, Person
 
 
@@ -98,7 +99,9 @@ def test_resolve_person_by_email_and_uid_not_found(mocker):
     ]
 
     client = CoManageClient()
-    with pytest.raises(APIError, match="No matching Person found"):
+    with pytest.raises(
+        PersonNotFound, match="No match for email=a@b.com and uid=someuser"
+    ):
         client.resolve_person_by_email_and_uid("a@b.com", "someuser")
 
 
@@ -205,5 +208,5 @@ def test_remove_person_from_group_missing(mocker):
     ).model_dump()
 
     client = CoManageClient()
-    with pytest.raises(APIError, match="No group membership found"):
+    with pytest.raises(MembershipNotFound, match="not in group"):
         client.remove_person_from_group(person_id=1, group_id=2)

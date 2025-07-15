@@ -1,11 +1,10 @@
 """
 Low-level client for interacting with the COmanage Registry API.
 
-Encapsulates basic CRUD operations and lookups used by the REMS bridge.
+Encapsulates basic CRUD operations and lookups.
 """
 
 import logging
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 
@@ -29,18 +28,16 @@ from rems_co.comanage_api.models import (
     NewObjectResponse,
     PersonRef,
 )
+from rems_co.exceptions import (
+    AlreadyMemberOfGroup,
+    COmanageAPIError,
+    MembershipNotFound,
+    PersonNotFound,
+)
 from rems_co.models import Group, Person
 from rems_co.settings import settings
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class APIError(Exception):
-    """Raised on failure to interact with the COmanage API."""
-
-    detail: str
-
 
 HttpMethod = Literal["get", "post", "delete"]
 
@@ -80,14 +77,14 @@ class CoManageClient:
         except httpx.HTTPStatusError as e:
             logger.error(
                 f"HTTP error from COmanage: {e.response.status_code} {e.response.text}",
-                exc_info=True,
             )
-            raise APIError(
-                f"{method.upper()} {path} failed: {e.response.status_code} - {e.response.text}"
+            raise COmanageAPIError(
+                detail=f"{method.upper()} {path} failed: {e.response.status_code} - {e.response.text}",
+                response=e.response,
             ) from e
         except httpx.RequestError as e:
             logger.error(f"Request error from COmanage: {e}", exc_info=True)
-            raise APIError(f"{method.upper()} {path} failed: {e}") from e
+            raise COmanageAPIError(f"{method.upper()} {path} failed: {e}") from e
 
     @retry_policy()
     def _get(self, path: str, **kwargs: Any) -> httpx.Response:
@@ -108,6 +105,8 @@ class CoManageClient:
             "/co_people.json", params={"coid": self.co_id, "search.mail": email}
         )
         people = CoPeopleResponse.model_validate(resp.json()).CoPeople
+        if not people:
+            raise PersonNotFound(f"No match for email={email}")
 
         for person in people:
             person_id = person.Id
@@ -123,8 +122,7 @@ class CoManageClient:
                     logger.info(f"Resolved person id={person_id} for uid={uid}")
                     return Person(id=person_id, email=email, identifier=uid)
 
-        logger.warning(f"No person found matching email={email}, uid={uid}")
-        raise APIError(f"No matching Person found with email={email} and uid={uid}")
+        raise PersonNotFound(f"No match for email={email} and uid={uid}")
 
     def get_group_by_name(self, name: str) -> Group | None:
         """Return the COmanage group with the given name, if it exists."""
@@ -171,7 +169,19 @@ class CoManageClient:
             ]
         ).model_dump(mode="json", exclude_none=True)
 
-        self._post("/co_group_members.json", json=payload)
+        try:
+            self._post("/co_group_members.json", json=payload)
+        except COmanageAPIError as e:
+            if (
+                e.response is not None
+                and e.response.status_code == 403
+                and "already member" in e.response.reason_phrase.lower()
+            ):
+                raise AlreadyMemberOfGroup(
+                    f"Person {person_id} already in group {group_id}",
+                    response=e.response,
+                ) from e
+            raise
 
     def remove_person_from_group(self, person_id: int, group_id: int) -> None:
         """Remove a person from a group, if they are a member."""
@@ -183,12 +193,7 @@ class CoManageClient:
         members = CoGroupMemberResponse.model_validate(resp.json()).CoGroupMembers
 
         if not members:
-            logger.warning(
-                f"No membership found for person={person_id} in group={group_id}"
-            )
-            raise APIError(
-                f"No group membership found for person={person_id} and group={group_id}"
-            )
-
-        member_id = members[0].Id
-        self._delete(f"/co_group_members/{member_id}.json")
+            raise MembershipNotFound(f"Person {person_id} not in group {group_id}")
+        for member in members:
+            logger.info(f"Found membership id={member.Id}, removing")
+            self._delete(f"/co_group_members/{member.Id}.json")

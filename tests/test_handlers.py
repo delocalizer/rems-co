@@ -1,5 +1,6 @@
 import pytest
 
+from rems_co.exceptions import AlreadyMemberOfGroup, MembershipNotFound
 from rems_co.models import ApproveEvent
 from rems_co.service.rems_handlers import (
     handle_approve,
@@ -82,6 +83,22 @@ def test_handle_approve_existing_group(mocker, example_event):
     mock_client.add_person_to_group.assert_called_once()
 
 
+def test_handle_approve_skips_already_member(mocker, example_event, caplog):
+    mock_client = mocker.patch(
+        "rems_co.service.rems_handlers.CoManageClient"
+    ).return_value
+    mock_client.get_group_by_name.return_value.id = 101
+    mock_client.get_group_by_name.return_value.name = example_event.resource
+    mock_client.add_person_to_group.side_effect = AlreadyMemberOfGroup(
+        "already a member"
+    )
+
+    with caplog.at_level("INFO"):
+        handle_approve(example_event)
+
+    assert any("already in group" in msg for msg in caplog.messages)
+
+
 def test_handle_revoke_group_found(mocker, example_event):
     mock_client = mocker.patch(
         "rems_co.service.rems_handlers.CoManageClient"
@@ -109,3 +126,19 @@ def test_handle_revoke_group_not_found(mocker, example_event, caplog):
         "Group 'urn:test:group123' not found during revoke" in message
         for message in caplog.messages
     )
+
+
+def test_handle_revoke_skips_membership_not_found(mocker, example_event, caplog):
+    mock_client = mocker.patch(
+        "rems_co.service.rems_handlers.CoManageClient"
+    ).return_value
+    mock_client.get_group_by_name.return_value.id = 101
+    mock_client.get_group_by_name.return_value.name = example_event.resource
+    mock_client.remove_person_from_group.side_effect = MembershipNotFound(
+        "not in group"
+    )
+
+    with caplog.at_level("WARNING"):
+        handle_revoke(example_event)
+
+    assert any("Membership not found" in msg for msg in caplog.messages)

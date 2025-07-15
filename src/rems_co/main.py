@@ -7,6 +7,7 @@ import logging
 
 from fastapi import FastAPI
 
+from rems_co import __version__
 from rems_co.listeners.events import router as event_router
 
 # Basic logging configuration
@@ -17,7 +18,7 @@ logging.basicConfig(
 app = FastAPI(
     title="REMS-COmanage Bridge",
     description="A service that syncs REMS entitlement notifications to COmanage.",
-    version="1.0.0",
+    version=__version__,
 )
 
 # Register endpoints for /approve and /revoke
