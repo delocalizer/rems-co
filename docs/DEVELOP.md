@@ -1,4 +1,4 @@
-# REMS–COmanage Bridge: Developer Guide
+# REMS–COmanage Developer Guide
 
 This project is a FastAPI-based service that processes entitlement events from REMS and updates COmanage accordingly.
 
@@ -29,20 +29,14 @@ This installs:
 
 ## 3. Configuration
 
-Copy `.env.example` to `.env` and fill in required values:
-
-```bash
-cp .env.example .env
-```
-
-Set values like:
+Copy [example.env](../resources/example-config/example.env) to `.env` and fill in required values:
 
 ```env
-comanage_registry_url=https://registry.example.org/registry
-comanage_api_userid=api-user
-comanage_api_key=super-secret-key
-comanage_coid=42
-create_groups_for_resources=["*"]
+COMANAGE_REGISTRY_URL=https://registry.example.org/registry
+COMANAGE_API_USERID=api-user
+COMANAGE_API_KEY=super-secret-key
+COMANAGE_COID=42
+CREATE_GROUPS_FOR_RESOURCES=["urn:allowed.org:*"]
 ```
 
 ---
@@ -79,7 +73,7 @@ This exposes:
 - `POST /approve`
 - `POST /revoke`
 
-You can test with `curl`, Postman, or `httpie`.
+You can test with `curl`, Postman, `httpie` etc.
 
 ---
 

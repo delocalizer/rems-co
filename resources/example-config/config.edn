@@ -1,0 +1,5 @@
+{
+  ;; add this block to enable entitlement webhook targets
+  :entitlements-target {:add "http://rems_co:8080/approve"
+                        :remove "http://rems_co:8080/revoke"}
+}

@@ -20,5 +20,7 @@ RUN pip install --upgrade pip && pip install .[prod]
 EXPOSE 8080
 ENV PORT=8080
 
+# ! Listening on 0.0.0.0 is ok only in an env we control completely —
+# ! otherwise this should be locked down to the source REMS ip
 CMD ["uvicorn", "rems_co.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
