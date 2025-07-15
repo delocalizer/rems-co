@@ -3,9 +3,16 @@ Entrypoint for the REMS-COmanage bridge FastAPI application.
 Sets up routes and provides a basic healthcheck.
 """
 
+import logging
+
 from fastapi import FastAPI
 
 from rems_co.listeners.events import router as event_router
+
+# Basic logging configuration
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
+)
 
 app = FastAPI(
     title="REMS-COmanage Bridge",

@@ -52,22 +52,22 @@ def test_handle_approve_creates_group_if_allowed(mocker, example_event):
 
 
 def test_handle_approve_does_not_create_group_if_disallowed(
-    mocker, example_event, capsys
+    mocker, example_event, caplog
 ):
     mock_client = mocker.patch(
         "rems_co.service.rems_handlers.CoManageClient"
     ).return_value
     mock_client.get_group_by_name.return_value = None
 
-    settings.create_groups_for_resources = ["urn:abc:*"]  # restrictive
+    settings.create_groups_for_resources = ["urn:abc:*"]  # restrictive pattern
 
-    handle_approve(example_event)
+    with caplog.at_level("INFO"):
+        handle_approve(example_event)
 
     mock_client.create_group.assert_not_called()
     mock_client.add_person_to_group.assert_not_called()
 
-    captured = capsys.readouterr()
-    assert "creation not allowed" in captured.out
+    assert any("creation not allowed" in message for message in caplog.messages)
 
 
 def test_handle_approve_existing_group(mocker, example_event):
@@ -94,14 +94,18 @@ def test_handle_revoke_group_found(mocker, example_event):
     mock_client.remove_person_from_group.assert_called_once()
 
 
-def test_handle_revoke_group_not_found(mocker, example_event, capsys):
+def test_handle_revoke_group_not_found(mocker, example_event, caplog):
     mock_client = mocker.patch(
         "rems_co.service.rems_handlers.CoManageClient"
     ).return_value
     mock_client.get_group_by_name.return_value = None
 
-    handle_revoke(example_event)
+    with caplog.at_level("WARNING"):
+        handle_revoke(example_event)
 
     mock_client.remove_person_from_group.assert_not_called()
-    captured = capsys.readouterr()
-    assert "Group 'urn:test:group123' not found during revoke" in captured.out
+
+    assert any(
+        "Group 'urn:test:group123' not found during revoke" in message
+        for message in caplog.messages
+    )

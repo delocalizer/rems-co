@@ -6,10 +6,13 @@ such as creating groups and managing memberships.
 """
 
 import fnmatch
+import logging
 
 from rems_co.comanage_api.client import CoManageClient
 from rems_co.models import ApproveEvent, RevokeEvent
 from rems_co.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 def should_create_group(resource: str) -> bool:
@@ -28,10 +31,11 @@ def handle_approve(event: ApproveEvent) -> None:
 
     if not group:
         if should_create_group(event.resource):
+            logger.info(f"Creating new group for resource: {event.resource}")
             group = api.create_group(event.resource)
         else:
-            print(
-                f"[INFO] Group '{event.resource}' not found and creation not allowed by pattern policy."
+            logger.info(
+                f"Group '{event.resource}' not found and creation not allowed by policy. Skipping."
             )
             return
 
@@ -47,8 +51,9 @@ def handle_revoke(event: RevokeEvent) -> None:
     group = api.get_group_by_name(event.resource)
 
     if group:
+        logger.info(f"Removing user {person.id} from group '{group.name}'")
         api.remove_person_from_group(person_id=person.id, group_id=group.id)
     else:
-        print(
-            f"[INFO] Group '{event.resource}' not found during revoke. No action taken."
+        logger.warning(
+            f"Group '{event.resource}' not found during revoke for user {person.id}. Skipping."
         )

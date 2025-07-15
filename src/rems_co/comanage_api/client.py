@@ -4,6 +4,7 @@ Low-level client for interacting with the COmanage Registry API.
 Encapsulates basic CRUD operations and lookups used by the REMS bridge.
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
@@ -30,6 +31,8 @@ from rems_co.comanage_api.models import (
 )
 from rems_co.models import Group, Person
 from rems_co.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -65,18 +68,25 @@ class CoManageClient:
             auth=(settings.comanage_api_userid, settings.comanage_api_key),
             timeout=settings.comanage_timeout_seconds,
         )
+        logger.debug(f"Initialized CoManageClient with base_url={self.base_url}")
 
     def _request(self, method: HttpMethod, path: str, **kwargs: Any) -> httpx.Response:
         """Perform an HTTP request with retries and error wrapping."""
         try:
+            logger.debug(f"Request: {method.upper()} {path} {kwargs}")
             response = self.client.request(method=method, url=path, **kwargs)
             response.raise_for_status()
             return response
         except httpx.HTTPStatusError as e:
+            logger.error(
+                f"HTTP error from COmanage: {e.response.status_code} {e.response.text}",
+                exc_info=True,
+            )
             raise APIError(
                 f"{method.upper()} {path} failed: {e.response.status_code} - {e.response.text}"
             ) from e
         except httpx.RequestError as e:
+            logger.error(f"Request error from COmanage: {e}", exc_info=True)
             raise APIError(f"{method.upper()} {path} failed: {e}") from e
 
     @retry_policy()
@@ -93,6 +103,7 @@ class CoManageClient:
 
     def resolve_person_by_email_and_uid(self, email: str, uid: str) -> Person:
         """Look up a person in COmanage by email and external UID."""
+        logger.debug(f"Resolving person: email={email}, uid={uid}")
         resp = self._get(
             "/co_people.json", params={"coid": self.co_id, "search.mail": email}
         )
@@ -109,21 +120,27 @@ class CoManageClient:
 
             for ident in identifiers:
                 if ident.Identifier == uid:
+                    logger.info(f"Resolved person id={person_id} for uid={uid}")
                     return Person(id=person_id, email=email, identifier=uid)
 
+        logger.warning(f"No person found matching email={email}, uid={uid}")
         raise APIError(f"No matching Person found with email={email} and uid={uid}")
 
     def get_group_by_name(self, name: str) -> Group | None:
         """Return the COmanage group with the given name, if it exists."""
+        logger.debug(f"Looking up group by name: {name}")
         resp = self._get("/co_groups.json", params={"coid": self.co_id})
         groups = CoGroupsResponse.model_validate(resp.json()).CoGroups
         for g in groups:
             if g.Name == name:
+                logger.info(f"Found group: {g.Name} (id={g.Id})")
                 return Group(id=g.Id, name=g.Name)
+        logger.info(f"Group not found: {name}")
         return None
 
     def create_group(self, name: str) -> Group:
         """Create a new COmanage group."""
+        logger.info(f"Creating group: {name}")
         payload = AddGroupRequest(
             CoGroups=[
                 CoGroupPayload(
@@ -142,6 +159,7 @@ class CoManageClient:
         self, person_id: int, group_id: int, valid_through: datetime | None
     ) -> None:
         """Add a person to a group, optionally with expiration."""
+        logger.info(f"Adding person {person_id} to group {group_id}")
         payload = AddGroupMemberRequest(
             CoGroupMembers=[
                 CoGroupMemberPayload(
@@ -157,6 +175,7 @@ class CoManageClient:
 
     def remove_person_from_group(self, person_id: int, group_id: int) -> None:
         """Remove a person from a group, if they are a member."""
+        logger.info(f"Removing person {person_id} from group {group_id}")
         resp = self._get(
             "/co_group_members.json",
             params={"cogroupid": group_id, "copersonid": person_id},
@@ -164,6 +183,9 @@ class CoManageClient:
         members = CoGroupMemberResponse.model_validate(resp.json()).CoGroupMembers
 
         if not members:
+            logger.warning(
+                f"No membership found for person={person_id} in group={group_id}"
+            )
             raise APIError(
                 f"No group membership found for person={person_id} and group={group_id}"
             )
