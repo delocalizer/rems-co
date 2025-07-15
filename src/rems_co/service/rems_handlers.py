@@ -1,3 +1,10 @@
+"""
+Business logic for handling REMS entitlement events.
+
+Translates ApproveEvent and RevokeEvent objects into actions on COmanage,
+such as creating groups and managing memberships.
+"""
+
 import fnmatch
 
 from rems_co.comanage_api.client import CoManageClient
@@ -6,9 +13,7 @@ from rems_co.settings import settings
 
 
 def should_create_group(resource: str) -> bool:
-    """
-    Helper: are we allowed to create missing group for this resource?
-    """
+    """Return True if group creation is allowed for this resource."""
     return any(
         fnmatch.fnmatch(resource, pattern)
         for pattern in settings.create_groups_for_resources
@@ -16,6 +21,7 @@ def should_create_group(resource: str) -> bool:
 
 
 def handle_approve(event: ApproveEvent) -> None:
+    """Handle an approval event by ensuring the group exists and adding the user."""
     api = CoManageClient()
     person = api.resolve_person_by_email_and_uid(email=event.mail, uid=event.user)
     group = api.get_group_by_name(event.resource)
@@ -35,6 +41,7 @@ def handle_approve(event: ApproveEvent) -> None:
 
 
 def handle_revoke(event: RevokeEvent) -> None:
+    """Handle a revocation event by removing the user from the group."""
     api = CoManageClient()
     person = api.resolve_person_by_email_and_uid(email=event.mail, uid=event.user)
     group = api.get_group_by_name(event.resource)

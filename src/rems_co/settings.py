@@ -1,11 +1,15 @@
+"""
+Runtime configuration for the REMS-COmanage bridge.
+
+Settings are loaded from environment variables or a `.env` file using Pydantic.
+"""
+
 from pydantic import Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Service settings.
-    """
+    """Application configuration model."""
 
     comanage_registry_url: HttpUrl
     comanage_coid: int
@@ -22,4 +26,5 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
+# Global settings instance used by the application.
 settings = Settings()  # type: ignore[call-arg]

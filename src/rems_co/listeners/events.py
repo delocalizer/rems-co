@@ -1,13 +1,19 @@
+"""
+HTTP routes for receiving REMS entitlement events and triggering business logic.
+"""
+
 from fastapi import APIRouter
 
 from rems_co.models import ApproveEvent, RevokeEvent
 from rems_co.service.rems_handlers import handle_approve, handle_revoke
 
 router = APIRouter()
+"""Routes: /approve and /revoke"""
 
 
 @router.post("/approve")
 async def approve(events: list[ApproveEvent]) -> dict:
+    """Handle a batch of REMS approval events."""
     for event in events:
         try:
             handle_approve(event)
@@ -18,6 +24,7 @@ async def approve(events: list[ApproveEvent]) -> dict:
 
 @router.post("/revoke")
 async def revoke(events: list[RevokeEvent]) -> dict:
+    """Handle a batch of REMS revocation events."""
     for event in events:
         try:
             handle_revoke(event)
