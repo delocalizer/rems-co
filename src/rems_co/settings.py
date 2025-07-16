@@ -20,7 +20,9 @@ class Settings(BaseSettings):
     comanage_retry_attempts: int = Field(
         3, description="Max retry attempts for COmanage API"
     )
-    comanage_retry_backoff: float = Field(3, description="Backoff multiplier")
+    comanage_retry_backoff: float = Field(
+        1, description="Exponential backoff multiplier"
+    )
     create_groups_for_resources: list[str] = ["*"]  # Default: all resources
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

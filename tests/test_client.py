@@ -1,7 +1,10 @@
+import importlib
 from datetime import datetime
 
+import httpx
 import pytest
 
+from rems_co.comanage_api import client as client_module
 from rems_co.comanage_api.client import CoManageClient
 from rems_co.comanage_api.models import (
     AddGroupMemberRequest,
@@ -210,3 +213,24 @@ def test_remove_person_from_group_missing(mocker):
     client = CoManageClient()
     with pytest.raises(MembershipNotFound, match="not in group"):
         client.remove_person_from_group(person_id=1, group_id=2)
+
+
+def test_retry_on_request_error(mocker):
+    mocker.patch.dict("os.environ", {"COMANAGE_RETRY_ATTEMPTS": "2"})
+
+    import rems_co.settings
+
+    # Reload settings and client module so retry decorators are rebound
+    importlib.reload(rems_co.settings)
+    importlib.reload(client_module)
+
+    # Patch client.client.request: client._request gets a ConnectError
+    client = client_module.CoManageClient()
+    mock_request = mocker.patch.object(
+        client.client, "request", side_effect=httpx.ConnectError("boom")
+    )
+
+    with pytest.raises(httpx.ConnectError):
+        client._get("/fail")
+
+    assert mock_request.call_count == 2
