@@ -1,10 +1,8 @@
-import importlib
 from datetime import datetime
 
 import httpx
 import pytest
 
-from rems_co.comanage_api import client as client_module
 from rems_co.comanage_api.client import CoManageClient
 from rems_co.comanage_api.models import (
     AddGroupMemberRequest,
@@ -23,6 +21,7 @@ from rems_co.comanage_api.models import (
 )
 from rems_co.exceptions import MembershipNotFound, PersonNotFound
 from rems_co.models import Group, Person
+from rems_co.settings import settings
 
 
 def test_resolve_person_by_email_and_uid_found(mocker):
@@ -216,21 +215,17 @@ def test_remove_person_from_group_missing(mocker):
 
 
 def test_retry_on_request_error(mocker):
-    mocker.patch.dict("os.environ", {"COMANAGE_RETRY_ATTEMPTS": "2"})
 
-    import rems_co.settings
-
-    # Reload settings and client module so retry decorators are rebound
-    importlib.reload(rems_co.settings)
-    importlib.reload(client_module)
-
-    # Patch client.client.request: client._request gets a ConnectError
-    client = client_module.CoManageClient()
+    # Patch client.client.request so client._request receives a RequestError
+    client = CoManageClient()
     mock_request = mocker.patch.object(
         client.client, "request", side_effect=httpx.ConnectError("boom")
     )
 
+    # With the app's current default settings of 3 retries and an exponential
+    # backoff multiplier of 1, this real-time test doesn't take too long. If
+    # thhose defaults change we'll need to patch things a bit more deeply.
     with pytest.raises(httpx.ConnectError):
         client._get("/fail")
 
-    assert mock_request.call_count == 2
+    assert mock_request.call_count == settings.comanage_retry_attempts
