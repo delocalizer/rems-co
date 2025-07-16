@@ -47,7 +47,7 @@ def retry_policy() -> Any:
     return retry(
         stop=stop_after_attempt(settings.comanage_retry_attempts),
         wait=wait_exponential(
-            multiplier=settings.comanage_retry_backoff, min=1, max=30
+            multiplier=settings.comanage_retry_backoff, min=1, max=10
         ),
         retry=retry_if_exception_type(httpx.RequestError),
         reraise=True,
@@ -83,8 +83,8 @@ class CoManageClient:
                 response=e.response,
             ) from e
         except httpx.RequestError as e:
-            logger.error(f"Request error from COmanage: {e}", exc_info=True)
-            raise COmanageAPIError(f"{method.upper()} {path} failed: {e}") from e
+            logger.error(f"Request error from COmanage: {e}")
+            raise
 
     @retry_policy()
     def _get(self, path: str, **kwargs: Any) -> httpx.Response:

@@ -1,7 +1,6 @@
 # rems-co
 
-**rems-co** is a lightweight bridge service that enables entitlement events from the [REMS]
-(https://github.com/CSCfi/rems) Resource Entitlement Management System to be reflected in real
+**rems-co** is a lightweight bridge service that enables entitlement events from the [REMS](https://github.com/CSCfi/rems) Resource Entitlement Management System to be reflected in real
 time as group membership changes within a COmanage Registry. When a user is approved for access
 to a resource in REMS, **rems-co** ensures the user is added to the corresponding group in
 COmanage; when access is revoked, the user is removed.
