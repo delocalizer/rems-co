@@ -3,4 +3,5 @@
 .env.*
 !.env.example
 *.egg-info/
+.tox
 *__pycache__

@@ -1,0 +1,35 @@
+@startuml
+
+Actor Handler
+participant REMS
+participant remsco as "rems-co"
+participant COmanage 
+database DataHolder as "Data Holder"
+Actor Applicant as "Data Applicant"
+
+Handler -[#green]> REMS : Approve entitlement
+REMS -> remsco : POST {user:resource:end}\n/approve
+REMS -> Applicant : Email notification sent
+remsco -> COmanage : Group associated\nwith resource exists?
+alt no group
+  alt resource policy\nallows group create
+    remsco -> COmanage : Create group
+  end
+end
+remsco -> COmanage : Add user to group\nValidThrough yyyy-mm-dd 
+Applicant --> DataHolder : identified user
+DataHolder --> COmanage
+COmanage --> DataHolder : Entitlements from\ne.g. OIDC groups claim
+DataHolder -[#green]> Applicant : Resource is available
+
+alt Revocation
+  Handler -[#red]> REMS : Revoke entitlement
+  REMS -> remsco : POST {user:resource}\n/revoke
+  remsco -> COmanage : Remove user from group\neffective immediately 
+  Applicant --> DataHolder : identified user
+  DataHolder --> COmanage
+  COmanage --> DataHolder : Entitlements from\ne.g. OIDC groups claim
+  DataHolder -[#red]X Applicant : Resource not available
+end
+
+@enduml
